@@ -20,6 +20,10 @@
 #include <plist/plist.h>
 #endif //HAVE_PLIST
 
+#ifdef HAVE_LIBFWKEYFETCH
+#include <libfwkeyfetch/libfwkeyfetch.hpp>
+#endif //HAVE_LIBFWKEYFETCH
+
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #elif defined(HAVE_WINSOCK_H)
@@ -43,35 +47,60 @@ static struct option longopts[] = {
     { "outfile",        required_argument,  NULL, 'o' },
     { "payload",        required_argument,  NULL, 'p' },
     { "replace",        required_argument,  NULL, 'r' },
-#ifdef HAVE_PLIST
-    { "shsh",           required_argument,  NULL, 's' },
-#endif //HAVE_PLIST
     { "type",           required_argument,  NULL, 't' },
     { "verify",         no_argument,        NULL, 'v' },
     { "iv",             required_argument,  NULL,  0  },
     { "key",            required_argument,  NULL,  0  },
+
+#ifdef HAVE_LIBFWKEYFETCH
+    { "fetch",          no_argument,        NULL, 'f' },
+#endif //HAVE_LIBFWKEYFETCH
+#ifdef HAVE_PLIST
+    { "shsh",           required_argument,  NULL, 's' },
+#endif //HAVE_PLIST
     { NULL, 0, NULL, 0 }
 };
 
 void cmd_help(){
-    printf("Usage: img3tool [OPTIONS] FILE\n");
-    printf("Parses img3 files\n\n");
-    printf("  -h, --help\t\t\tprints usage information\n");
-    printf("  -c, --create\t<PATH>\t\tcreates img3 with raw file (last argument)\n");
-    printf("  -e, --extract\t\t\textracts payload\n");
-    printf("  -n, --rename-payload NAME\trename img3 payload (NAME must be exactly 4 bytes)\n");
-    printf("  -o, --outfile\t\t\toutput path for extracting payload\n");
-    printf("  -p, --payload\t\t\tinput img3 path for creating signed img3\n");
-    printf("  -r, --replace\t<PATH>\t\treplace DATA in img3 (much like xpwntool's template feature)\n");
-#ifndef HAVE_PLIST
-    printf("UNAVAILABLE: ");
+    printf( "Usage: img3tool [OPTIONS] FILE\n"
+            "Parses img3 files\n\n"
+            "  -h, --help\t\t\tprints usage information\n"
+            "  -c, --create\t<PATH>\t\tcreates img3 with raw file (last argument)\n"
+            "  -e, --extract\t\t\textracts payload\n"
+            "  -n, --rename-payload NAME\trename img3 payload (NAME must be exactly 4 bytes)\n"
+            "  -o, --outfile\t\t\toutput path for extracting payload\n"
+            "  -p, --payload\t\t\tinput img3 path for creating signed img3\n"
+            "  -r, --replace\t<PATH>\t\treplace DATA in img3 (much like xpwntool's template feature)\n"
+            "  -t, --type\t\t\tset type for creating IMG3 files from raw\n"
+            "  -v, --verify\tverify img3\n"
+            "      --iv\t\t\tIV  for decrypting payload when extracting (requires -e and -o)\n"
+            "      --key\t\t\tKey for decrypting payload when extracting (requires -e and -o)\n"
+#ifdef HAVE_LIBFWKEYFETCH
+            "[libfwkeyfetch]\n"
+#else
+            "[libfwkeyfetch] (UNAVAILABLE)\n"
+#endif //HAVE_LIBFWKEYFETCH
+            "  -f, --fetch\t\t\tTry to get IV/KEY based on KBAG from fwkeydb\n"
+#ifdef HAVE_PLIST
+           "[plist]\n"
+#else
+           "[plist] (UNAVAILABLE)\n"
 #endif //HAVE_PLIST
-    printf("  -s, --shsh\t<PATH>\t\tFilepath for shsh\n");
-    printf("  -t, --type\t\t\tset type for creating IMG3 files from raw\n");
-    printf("  -v, --verify\tverify img3\n");
-    printf("      --iv\t\t\tIV  for decrypting payload when extracting (requires -e and -o)\n");
-    printf("      --key\t\t\tKey for decrypting payload when extracting (requires -e and -o)\n");
-    printf("\n");
+            "  -s, --shsh\t<PATH>\t\tFilepath for shsh\n"
+            "\n"
+            "Features:\n"
+#ifdef HAVE_LIBFWKEYFETCH
+            "libfwkeyfetch: yes\n"
+#else
+            "libfwkeyfetch: no\n"
+#endif //HAVE_LIBFWKEYFETCH
+
+#ifdef HAVE_PLIST
+            "plist: yes\n"
+#else
+            "plist: no\n"
+#endif //HAVE_PLIST
+           );
 }
 
 tihmstar::Mem readFromFile(const char *filePath){
@@ -141,8 +170,9 @@ int main_r(int argc, const char * argv[]) {
     int optindex = 0;
     int opt = 0;
     long flags = 0;
+    bool fetchKeys = false;
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "hc:en:o:p:r:s:t:v", longopts, &optindex)) >= 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "hc:efn:o:p:r:s:t:v", longopts, &optindex)) >= 0) {
         switch (opt) {
             case 0: //long opts
             {
@@ -158,15 +188,23 @@ int main_r(int argc, const char * argv[]) {
             case 'h':
                 cmd_help();
                 return 0;
-            case 'e':
-                retassure(!(flags & FLAG_CREATE) && !replaceTemplateFilePath, "Invalid command line arguments. can't extract and create at the same time");
-                flags |= FLAG_EXTRACT;
-                break;
             case 'c':
                 flags |= FLAG_CREATE;
                 retassure(!(flags & FLAG_EXTRACT) && !replaceTemplateFilePath, "Invalid command line arguments. can't extract and create at the same time");
                 retassure(!outFile, "Invalid command line arguments. outFile already set!");
                 outFile = optarg;
+                break;
+            case 'e':
+                retassure(!(flags & FLAG_CREATE) && !replaceTemplateFilePath, "Invalid command line arguments. can't extract and create at the same time");
+                flags |= FLAG_EXTRACT;
+                break;
+            case 'f':
+                fetchKeys = true;
+                break;
+            case 'n': //rename-payload
+                retassure(!img3Type, "Invalid command line arguments. im4pType already set!");
+                img3Type = optarg;
+                flags |= FLAG_RENAME;
                 break;
             case 'o':
                 retassure(!outFile, "Invalid command line arguments. outFile already set!");
@@ -175,23 +213,19 @@ int main_r(int argc, const char * argv[]) {
             case 'p':
                 payloadimg3 = optarg;
                 break;
-            case 't':
-                retassure(!img3Type, "Invalid command line arguments. img3Type already set!");
-                img3Type = optarg;
-                break;
             case 'r':
                 retassure(!(flags & (FLAG_CREATE | FLAG_EXTRACT)), "Invalid command line arguments. can't replace, extract and create at the same time");
                 replaceTemplateFilePath = optarg;
+                break;
+            case 't':
+                retassure(!img3Type, "Invalid command line arguments. img3Type already set!");
+                img3Type = optarg;
                 break;
 #ifdef HAVE_PLIST
             case 's':
                 shshFile = optarg;
                 break;
 #endif //HAVE_PLIST
-            case 'n': //rename-payload
-                retassure(!img3Type, "Invalid command line arguments. im4pType already set!");
-                img3Type = optarg;
-                flags |= FLAG_RENAME;
             case 'v':
                 flags |= FLAG_VERIFY;
                 break;
@@ -201,7 +235,10 @@ int main_r(int argc, const char * argv[]) {
                 return -1;
         }
     }
-    
+#ifdef HAVE_LIBFWKEYFETCH
+    tihmstar::libfwkeyfetch::fw_key fwKey = {};
+#endif //HAVE_LIBFWKEYFETCH
+
     if (outFile && strcmp(outFile, "-") == 0) {
         int s_out = -1;
         int s_err = -1;
@@ -245,6 +282,44 @@ int main_r(int argc, const char * argv[]) {
     if (flags & FLAG_EXTRACT) {
         retassure(outFile, "Outfile required for operation");
         const char *compression = NULL;
+        if (fetchKeys && (!decryptIv || !strlen(decryptIv)) && (!decryptKey || !strlen(decryptKey))) {
+#ifndef HAVE_LIBFWKEYFETCH
+            reterror("Compiled without libfwkeyfetch");
+#else
+            for (int i=1; i>0; i++) {
+                std::string kbagstr;
+                try {
+                    tihmstar::Mem kbag = getKBAG(workingBuf.data(),workingBuf.size(), i);
+                    for (int z=0; z<kbag.size(); z++) {
+                        char cur[4] = {};
+                        snprintf(cur, sizeof(cur), "%02x",kbag.data()[z]);
+                        kbagstr += cur;
+                    }
+                } catch (tihmstar::exception &e) {
+#ifdef DEBUG
+                    e.dump();
+#endif
+                    warning("Failed to get KBAG at index %d, falling back to extraction without keys!",i);
+                    goto failedToFindKeys;
+                }
+                try {
+                    info("Fetching keys for KBAG %d",i);
+                    fwKey = tihmstar::libfwkeyfetch::getFirmwareKeyForKBAG(kbagstr);
+                } catch (tihmstar::exception &e) {
+#ifdef DEBUG
+                    e.dump();
+#endif
+                    error("Failed to fetch IV/Key for KBAG %d (%s), retrying with next...",i,kbagstr.c_str());
+                    continue;
+                }
+                decryptIv = fwKey.iv;
+                decryptKey = fwKey.key;
+                info("Found IV: %s KEY: %s", decryptIv, decryptKey);
+                break;
+            }
+#endif
+        failedToFindKeys:;
+        }
         auto outdata = getPayloadFromIMG3(workingBuf.data(),workingBuf.size(), decryptIv, decryptKey);
         saveToFile(outFile, outdata.data(), outdata.size());
         if (compression) {

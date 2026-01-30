@@ -326,7 +326,7 @@ tihmstar::Mem img3tool::getValFromIMG3(const void *buf, size_t size, uint32_t va
 tihmstar::Mem img3tool::getPayloadFromIMG3(const void *buf, size_t size, const char *decryptIv, const char *decryptKey, const char **outUsedCompression){
     tihmstar::Mem payload = getValFromIMG3(buf, size, 'DATA');
 
-    if (decryptIv || decryptKey) {
+    if ((decryptIv && *decryptIv) || (decryptKey && *decryptKey)) {
 #ifdef HAVE_CRYPTO
         payload = decryptPayload(payload, decryptIv, decryptKey);
         info("payload decrypted");
@@ -559,7 +559,7 @@ bool img3tool::img3ContainsKBAG(const void *buf, size_t size){
     }
     return false;
 }
-std::string img3tool::getKBAG(const void *buf, size_t size, int kbagNum){
+tihmstar::Mem img3tool::getKBAG(const void *buf, size_t size, int kbagNum){
     img3 *header = verifyIMG3Header(buf, size);
     
     uint32_t bodySize = header->sizeNoHeader;
@@ -581,7 +581,7 @@ std::string img3tool::getKBAG(const void *buf, size_t size, int kbagNum){
                     uint8_t key[0x20];
                 } *keybag = (struct kb*)tag->data;
                 if (keybag->num == kbagNum) {
-                    std::string retval;
+                    tihmstar::Mem retval;
                     retval.resize(0x10 + 0x20);
                     memcpy((char*)&retval.data()[0], keybag->iv, sizeof(keybag->iv));
                     memcpy((char*)&retval.data()[0x10], keybag->key, sizeof(keybag->key));
@@ -723,7 +723,6 @@ tihmstar::Mem img3tool::decryptPayload(const tihmstar::Mem &payload, const char 
     size_t keySize = 0;
     retassure(decryptIv, "decryptPayload requires IV but none was provided!");
     retassure(decryptKey, "decryptPayload requires KEY but none was provided!");
-
 
     tihmstar::Mem decPayload = payload.copy();
     size_t decryptionSize = decPayload.size() & ~0xf;
