@@ -86,6 +86,28 @@ static std::string img3TagMagicToComponentName(std::string tagMagic){
         return "RestoreKernelCache";
     }else if (tagMagic == "rdsk"){
         return "RestoreRamDisk";
+    }else if (tagMagic == "logo"){
+        return "AppleLogo";
+    }else if (tagMagic == "chg0"){
+        return "BatteryCharging0";
+    }else if (tagMagic == "chg1"){
+        return "BatteryCharging1";
+    }else if (tagMagic == "batF"){
+        return "BatteryFull";
+    }else if (tagMagic == "bat0"){
+        return "BatteryLow0";
+    }else if (tagMagic == "bat1"){
+        return "BatteryLow1";
+    }else if (tagMagic == "dtre"){
+        return "DeviceTree";
+    }else if (tagMagic == "glyC"){
+        return "GlyphCharging";
+    }else if (tagMagic == "glyP"){
+        return "GlyphPlugin";
+    }else if (tagMagic == "ibot"){
+        return "iBoot";
+    }else if (tagMagic == "recm"){
+        return "RecoveryMode";
     }else{
         reterror("unknown tagMagic '%s'",tagMagic.c_str());
     }
