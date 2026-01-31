@@ -206,8 +206,14 @@ void img3tool::printIMG3(const void *buf, size_t size){
                 break;
             
             case 'SEPO':
-                retassure(tag->dataLength == 4, "SEPO has unexpected dataLength! Expected 0x%x but got 0x%x",0x4,tag->dataLength);
-                printf("SEPO: 0x%x\n",*(uint32_t*)tag->data);
+            case 'CEPO':
+            case 'SDOM':
+            case 'PROD':
+            {
+                retassure(tag->dataLength == 4, "tag has unexpected dataLength! Expected 0x%x but got 0x%x",0x4,tag->dataLength);
+                uint32_t t = __builtin_bswap32(tag->magic);
+                printf("%.4s: 0x%x\n",(char*)&t,*(uint32_t*)tag->data);
+            }
                 break;
 
             case 'SHSH':
