@@ -9,10 +9,11 @@ libimg3tool_la_CFLAGS = $(AM_CFLAGS)
 libimg3tool_la_CXXFLAGS = $(AM_CXXFLAGS)
 libimg3tool_la_LDFLAGS = $(AM_LDFLAGS)
 libimg3tool_la_SOURCES =	lzssdec.c \
-							img3tool.cpp
+							            img3tool.cpp \
+                          24kpwn.cpp
 
-img3tool_CFLAGS = $(AM_CFLAGS)
+img3tool_CFLAGS = $(AM_CFLAGS) $(libfwkeyfetch_CFLAGS)
 img3tool_CXXFLAGS = $(AM_CXXFLAGS)
-img3tool_LDFLAGS = $(AM_LDFLAGS)
+img3tool_LDFLAGS = $(AM_LDFLAGS)  $(libfwkeyfetch_LIBS)
 img3tool_LDADD = libimg3tool.la
 img3tool_SOURCES = 	main.cpp

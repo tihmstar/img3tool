@@ -9,8 +9,11 @@
 /* Begin PBXBuildFile section */
 		2A3E770A29A8DD370079E6B4 /* libcrypto.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; };
 		2A3E770B29A8DD370079E6B4 /* libcrypto.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		2A3E770D29A8E80D0079E6B4 /* libplist-2.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A3E770C29A8E80D0079E6B4 /* libplist-2.0.3.dylib */; };
-		2A3E770E29A8E80D0079E6B4 /* libplist-2.0.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A3E770C29A8E80D0079E6B4 /* libplist-2.0.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A578E1F2F56FE0A00125668 /* libplist-2.0.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */; };
+		2A578E202F56FE0A00125668 /* libplist-2.0.4.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A578E222F56FE3800125668 /* libfwkeyfetch.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A578E212F56FE3800125668 /* libfwkeyfetch.0.dylib */; };
+		2A578E232F56FE3800125668 /* libfwkeyfetch.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A578E212F56FE3800125668 /* libfwkeyfetch.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AD7898D2F6A8F48006A211B /* 24kpwn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2AD7898C2F6A8F48006A211B /* 24kpwn.cpp */; };
 		8738E89A26948E4C00C03872 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8738E89926948E4C00C03872 /* main.cpp */; };
 		8738E8A226948E9500C03872 /* libgeneral.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8738E8A126948E9500C03872 /* libgeneral.0.dylib */; };
 		8738E8A326948E9500C03872 /* libgeneral.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8738E8A126948E9500C03872 /* libgeneral.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -34,9 +37,10 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				2A578E232F56FE3800125668 /* libfwkeyfetch.0.dylib in Embed Libraries */,
 				2A3E770B29A8DD370079E6B4 /* libcrypto.3.dylib in Embed Libraries */,
 				8738E8A326948E9500C03872 /* libgeneral.0.dylib in Embed Libraries */,
-				2A3E770E29A8E80D0079E6B4 /* libplist-2.0.3.dylib in Embed Libraries */,
+				2A578E202F56FE0A00125668 /* libplist-2.0.4.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -46,6 +50,10 @@
 /* Begin PBXFileReference section */
 		2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.3.dylib; path = ../../../../usr/local/lib/libcrypto.3.dylib; sourceTree = "<group>"; };
 		2A3E770C29A8E80D0079E6B4 /* libplist-2.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libplist-2.0.3.dylib"; path = "../../../../usr/local/lib/libplist-2.0.3.dylib"; sourceTree = "<group>"; };
+		2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libplist-2.0.4.dylib"; path = "../../../../usr/local/lib/libplist-2.0.4.dylib"; sourceTree = "<group>"; };
+		2A578E212F56FE3800125668 /* libfwkeyfetch.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfwkeyfetch.0.dylib; path = ../../../../usr/local/lib/libfwkeyfetch.0.dylib; sourceTree = "<group>"; };
+		2AD7898B2F6A8F48006A211B /* 24kpwn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = 24kpwn.hpp; path = ../include/img3tool/24kpwn.hpp; sourceTree = "<group>"; };
+		2AD7898C2F6A8F48006A211B /* 24kpwn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = 24kpwn.cpp; sourceTree = "<group>"; };
 		8738E89626948E4C00C03872 /* img3tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = img3tool; sourceTree = BUILT_PRODUCTS_DIR; };
 		8738E89926948E4C00C03872 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		8738E8A126948E9500C03872 /* libgeneral.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgeneral.0.dylib; path = ../../../../usr/local/lib/libgeneral.0.dylib; sourceTree = "<group>"; };
@@ -61,9 +69,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2A578E222F56FE3800125668 /* libfwkeyfetch.0.dylib in Frameworks */,
 				2A3E770A29A8DD370079E6B4 /* libcrypto.3.dylib in Frameworks */,
 				8738E8A226948E9500C03872 /* libgeneral.0.dylib in Frameworks */,
-				2A3E770D29A8E80D0079E6B4 /* libplist-2.0.3.dylib in Frameworks */,
+				2A578E1F2F56FE0A00125668 /* libplist-2.0.4.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +101,8 @@
 			children = (
 				8738E8A826949FBA00C03872 /* lzssdec.h */,
 				8738E8A926949FBA00C03872 /* lzssdec.c */,
+				2AD7898B2F6A8F48006A211B /* 24kpwn.hpp */,
+				2AD7898C2F6A8F48006A211B /* 24kpwn.cpp */,
 				8738E8AC26958B0B00C03872 /* img3tool.hpp.in */,
 				8738E8AB26958B0000C03872 /* img3tool.hpp */,
 				8738E8A526948F1600C03872 /* img3tool.cpp */,
@@ -103,6 +114,8 @@
 		8738E8A026948E9500C03872 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2A578E212F56FE3800125668 /* libfwkeyfetch.0.dylib */,
+				2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */,
 				2A3E770C29A8E80D0079E6B4 /* libplist-2.0.3.dylib */,
 				2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */,
 				8738E8A126948E9500C03872 /* libgeneral.0.dylib */,
@@ -170,6 +183,7 @@
 				8738E89A26948E4C00C03872 /* main.cpp in Sources */,
 				8738E8AA26949FBA00C03872 /* lzssdec.c in Sources */,
 				8738E8A726948F1600C03872 /* img3tool.cpp in Sources */,
+				2AD7898D2F6A8F48006A211B /* 24kpwn.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +234,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					HAVE_LIBFWKEYFETCH,
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -298,9 +313,17 @@
 					XCODE,
 					HAVE_CRYPTO,
 					HAVE_PLIST,
+					HAVE_MEMMEM,
+					WITH_24KPWN,
 				);
-				HEADER_SEARCH_PATHS = /usr/local/include;
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				HEADER_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/openssl@3/3.4.1/include",
+					/usr/local/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/openssl@3/3.4.1/lib",
+					/usr/local/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -309,8 +332,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				HEADER_SEARCH_PATHS = /usr/local/include;
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				HEADER_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/openssl@3/3.4.1/include",
+					/usr/local/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/openssl@3/3.4.1/lib",
+					/usr/local/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -40,7 +40,7 @@ namespace tihmstar {
         uint32_t getImg3ImageType(const void *buf, size_t size);
     
         bool img3ContainsKBAG(const void *buf, size_t size);
-        std::string getKBAG(const void *buf, size_t size, int kbagNum);
+        tihmstar::Mem getKBAG(const void *buf, size_t size, int kbagNum);
 
 #if @HEADER_HAVE_PLIST@ //HAVE_PLIST
         tihmstar::Mem signIMG3WithSHSH(const void *buf, size_t size, plist_t p_shshfile);
