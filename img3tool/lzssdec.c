@@ -23,7 +23,7 @@
 #endif
 
 #ifndef HAVE_MEMMEM
-void *memmem(const void *haystack_start, size_t haystack_len, const void *needle_start, size_t needle_len){
+static void *memmem(const void *haystack_start, size_t haystack_len, const void *needle_start, size_t needle_len){
     const unsigned char *haystack = (const unsigned char *)haystack_start;
     const unsigned char *needle = (const unsigned char *)needle_start;
     const unsigned char *h = NULL;
@@ -42,7 +42,7 @@ void *memmem(const void *haystack_start, size_t haystack_len, const void *needle
         return NULL;
     }
 
-    for (;haystack_len--; haystack++) {
+    for (; haystack_len--; haystack++) {
         x = needle_len;
         n = needle;
         h = haystack;
@@ -50,17 +50,12 @@ void *memmem(const void *haystack_start, size_t haystack_len, const void *needle
         if (haystack_len < needle_len)
             break;
 
-        if ((*haystack != *needle) || (*haystack + needle_len != *needle + needle_len))
+        if ((haystack[0] != needle[0]) || (haystack[needle_len-1] != needle[needle_len-1]))
             continue;
 
-        for (; x; h++, n++) {
-            x--;
-
-            if (*h != *n)
-                break;
-
-            if (x == 0)
-                return (void *)haystack;
+        for (; x--; h++, n++) {
+            if (*h != *n) break;
+            if (x == 0) return (void *)haystack;
         }
     }
     return NULL;
@@ -68,9 +63,9 @@ void *memmem(const void *haystack_start, size_t haystack_len, const void *needle
 #endif
 
 
-static uint32_t decompress_lzss(uint8_t *dst, const uint8_t *src, uint32_t srclen);
-static uint8_t *compress_lzss(uint8_t *dst, uint32_t dstlen, const uint8_t *src, uint32_t srcLen);
-static uint32_t lzadler32(const uint8_t *buf, int32_t len);
+static size_t decompress_lzss(uint8_t *dst, size_t dstlen, const uint8_t *src, size_t srclen);
+static uint8_t *compress_lzss(uint8_t *dst, size_t dstlen, const uint8_t *src, size_t srcLen);
+static uint32_t lzadler32(const uint8_t *buf, size_t len);
 
 
 struct compHeader {
@@ -98,7 +93,7 @@ char *tryLZSS(const char *compressed, size_t compressedSize, size_t *outSize, co
     }
     
     feed--;
-    int rc = decompress_lzss((void*)decomp, (void*)feed, ntohl(compHeader->compressedSize));
+    size_t rc = decompress_lzss((void*)decomp, ntohl(compHeader->uncompressedSize), (void*)feed, ntohl(compHeader->compressedSize));
     if (rc != ntohl(compHeader->uncompressedSize)) {
         return NULL;
     }
@@ -164,7 +159,7 @@ uint32_t lzss_compress(const uint8_t *src, uint32_t src_len,uint8_t *dst, uint32
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
-static uint32_t lzadler32(const uint8_t *buf, int32_t len)
+static uint32_t lzadler32(const uint8_t *buf, size_t len)
 {
     unsigned long s1 = 1; // adler & 0xffff;
     unsigned long s2 = 0; // (adler >> 16) & 0xffff;
@@ -222,7 +217,7 @@ struct encode_state {
 };
 
 
-static uint32_t decompress_lzss(uint8_t *dst, const uint8_t *src, uint32_t srclen)
+static size_t decompress_lzss(uint8_t *dst, size_t dstlen, const uint8_t *src, size_t srclen)
 {
     /* ring buffer of size N, with extra F-1 bytes to aid string comparison */
     uint8_t text_buf[N + F - 1];
@@ -254,6 +249,7 @@ static uint32_t decompress_lzss(uint8_t *dst, const uint8_t *src, uint32_t srcle
             j  =  (j & 0x0F) + THRESHOLD;
             for (k = 0; k <= j; k++) {
                 c = text_buf[(i + k) & (N - 1)];
+                if (dst >= dststart+dstlen) return 0;
                 *dst++ = c;
                 text_buf[r++] = c;
                 r &= (N - 1);
@@ -261,7 +257,7 @@ static uint32_t decompress_lzss(uint8_t *dst, const uint8_t *src, uint32_t srcle
         }
     }
     
-    return (uint32_t)(dst - dststart);
+    return (dst - dststart);
 }
 
 /*
@@ -378,7 +374,7 @@ static void delete_node(struct encode_state *sp, int p)
     sp->parent[p] = NIL;
 }
 
-static uint8_t *compress_lzss(uint8_t *dst, uint32_t dstlen, const uint8_t *src, uint32_t srcLen){
+static uint8_t *compress_lzss(uint8_t *dst, size_t dstlen, const uint8_t *src, size_t srcLen){
     /* Encoding state, mostly tree but some current match stuff */
     struct encode_state *sp;
 

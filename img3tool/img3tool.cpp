@@ -4,9 +4,9 @@
 //
 //  Created by tihmstar on 06.07.21.
 //
+#include <libgeneral/macros.h>
 
 #include "../include/img3tool/img3tool.hpp"
-#include <libgeneral/macros.h>
 #include <string.h>
 extern "C"{
 #include "lzssdec.h"
@@ -111,7 +111,7 @@ tihmstar::Mem img3tool::uncompressIfNeeded(const tihmstar::Mem &compressedPayloa
             }
             if (outUsedCompression) *outUsedCompression = "complzss";
         }else{
-            printf("failed!\n");
+            reterror("failed!");
         }
     } else if (strncmp(payload, "bvx2", 4) == 0) {
         reterror("bvx2 currently not supported");
@@ -169,7 +169,7 @@ void img3tool::printIMG3(const void *buf, size_t size){
                 break;
 
             case 'CERT':
-                printf("CERT: fileoffset: 0x%08lx size: 0x%08x\n",((uint8_t*)tag-(uint8_t*)buf),tag->dataLength);
+                printf("CERT: fileoffset: 0x%08lx size: 0x%08x (fullsize: 0x%08x)\n",((uint8_t*)tag-(uint8_t*)buf),tag->dataLength,tag->totalLength);
                 break;
 
             case 'CHIP':
@@ -217,7 +217,7 @@ void img3tool::printIMG3(const void *buf, size_t size){
                 break;
 
             case 'SHSH':
-                printf("SHSH: fileoffset: 0x%08lx size: 0x%08x\n",((uint8_t*)tag-(uint8_t*)buf),tag->dataLength);
+                printf("SHSH: fileoffset: 0x%08lx size: 0x%08x (fullsize: 0x%08x)\n",((uint8_t*)tag-(uint8_t*)buf),tag->dataLength,tag->totalLength);
 #ifdef XCODE
                 printf("\t");
                 for (int i=0; i<tag->dataLength; i++){
@@ -244,6 +244,10 @@ void img3tool::printIMG3(const void *buf, size_t size){
                 } *v = (struct vers*)tag->data;
                 printf("VERS: %.*s\n",v->len,v->str);
             }
+                break;
+                
+            case '24KP':
+                printf("24KP: fileoffset: 0x%08lx size: 0x%08x (fullsize: 0x%08x)\n",((uint8_t*)tag-(uint8_t*)buf),tag->dataLength,tag->totalLength);
                 break;
 
             default:
@@ -314,6 +318,13 @@ const img3Tag *getValRawPtrFromIMG3(const void *buf, size_t size, uint32_t val){
 
 tihmstar::Mem img3tool::getValFromIMG3(const void *buf, size_t size, uint32_t val){
     const img3Tag *tag = getValRawPtrFromIMG3(buf, size, val);
+    if (!tag && val == 'TYPE') {
+        /*
+            iOS 2 doesn't use TYPE
+         */
+        const img3 *header = verifyIMG3Header(buf, size);
+        return {&header->identifier,sizeof(header->identifier)};
+    }
     retassure(tag, "Failed to get tag for val '%.*s'",4,&val);
     /*
         wtf??
@@ -333,16 +344,47 @@ tihmstar::Mem img3tool::getPayloadFromIMG3(const void *buf, size_t size, const c
     tihmstar::Mem payload = getValFromIMG3(buf, size, 'DATA');
 
     if ((decryptIv && *decryptIv) || (decryptKey && *decryptKey)) {
-#ifdef HAVE_CRYPTO
-        payload = decryptPayload(payload, decryptIv, decryptKey);
-        info("payload decrypted");
-#else
+#ifndef HAVE_CRYPTO
         reterror("decryption keys were provided, but img4tool was compiled without crypto backend!");
+#endif
+        /*
+            There are 2 special cases where data might be not a multiple of AES BLOCK SIZE (16).
+            1) iPhone1,1 iOS 2.0.1 kernel is not a multiple of 0x10, but the remainder is NOT encrypted
+            2) iPhone3,2 iOS 7.1.2 (kernel?) is not a multiple of 0x10, but the remainder IS encrypted
+            It's more likely that we run into case 2), so we'll try that first
+         */
+        tihmstar::Mem payloadDec;
+#ifdef HAVE_CRYPTO
+        payloadDec = decryptPayload(payload, decryptIv, decryptKey);
+        info("payload decrypted");
 #endif //HAVE_CRYPTO
+        try {
+            return uncompressIfNeeded(payloadDec, outUsedCompression, NULL, NULL);
+        } catch (tihmstar::exception &e) {
+            error("Failed to uncompress with error:\n%s"
+                  "\nRetrying with iOS 2.0.1 workaround...",e.dumpStr().c_str());
+        }
+        /*
+            decryptPayload always returns a multiple of 0x10, so removing even one byte from the end
+            (which in this case wasn't there to begin with)
+            will stop the last block from being decrypted and left as it is.
+            Worst case up to 14 bytes of random padding might be left dangling at the (compressed) image,
+            but this is fine since uncompression has the actual sizes
+         */
+        payload.resize(payload.size() - 1);
+#ifdef HAVE_CRYPTO
+        payloadDec = decryptPayload(payload, decryptIv, decryptKey);
+        info("payload decrypted (second attempt)");
+#endif //HAVE_CRYPTO
+        //exception is fatal this time
+        return uncompressIfNeeded(payloadDec, outUsedCompression, NULL, NULL);
+    }else{
+        /*
+            No decryption was performed just check if we need decompression and return payload
+            No magic here
+         */
+        return uncompressIfNeeded(payload, outUsedCompression, NULL, NULL);
     }
-    auto ret = uncompressIfNeeded(payload, outUsedCompression, NULL, NULL);
-    
-    return ret;
 }
 
 tihmstar::Mem img3tool::getEmptyIMG3Container(uint32_t identifier){

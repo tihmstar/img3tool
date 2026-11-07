@@ -4,8 +4,8 @@
 //
 //  Created by tihmstar on 06.07.21.
 //
-
 #include <libgeneral/macros.h>
+
 #include <libgeneral/Utils.hpp>
 #include "../include/img3tool/img3tool.hpp"
 
@@ -30,6 +30,10 @@
 #include <winsock.h>
 #endif
 
+#ifdef WITH_24KPWN
+#include "../include/img3tool/24kpwn.hpp"
+#endif
+
 using namespace tihmstar::img3tool;
 
 #define FLAG_ALL        (1 << 0)
@@ -47,17 +51,17 @@ static struct option longopts[] = {
     { "outfile",        required_argument,  NULL, 'o' },
     { "payload",        required_argument,  NULL, 'p' },
     { "replace",        required_argument,  NULL, 'r' },
-    { "type",           required_argument,  NULL, 't' },
-    { "verify",         no_argument,        NULL, 'v' },
-    { "iv",             required_argument,  NULL,  0  },
-    { "key",            required_argument,  NULL,  0  },
-
 #ifdef HAVE_LIBFWKEYFETCH
     { "fetch",          no_argument,        NULL, 'f' },
 #endif //HAVE_LIBFWKEYFETCH
 #ifdef HAVE_PLIST
     { "shsh",           required_argument,  NULL, 's' },
 #endif //HAVE_PLIST
+    { "type",           required_argument,  NULL, 't' },
+    { "verify",         no_argument,        NULL, 'v' },
+    { "iv",             required_argument,  NULL,  0  },
+    { "key",            required_argument,  NULL,  0  },
+    { "24kpwn",         optional_argument,  NULL,  0  },
     { NULL, 0, NULL, 0 }
 };
 
@@ -72,9 +76,12 @@ void cmd_help(){
             "  -p, --payload\t\t\tinput img3 path for creating signed img3\n"
             "  -r, --replace\t<PATH>\t\treplace DATA in img3 (much like xpwntool's template feature)\n"
             "  -t, --type\t\t\tset type for creating IMG3 files from raw\n"
-            "  -v, --verify\tverify img3\n"
+            "  -v, --verify\t\t\tverify img3\n"
             "      --iv\t\t\tIV  for decrypting payload when extracting (requires -e and -o)\n"
             "      --key\t\t\tKey for decrypting payload when extracting (requires -e and -o)\n"
+#ifdef WITH_24KPWN
+            "      --24kpwn [cpid]\t\tInject 24kpwn exploit (optionally specify CPID. 0x8720 or 0x8920)\n"
+#endif
 #ifdef HAVE_LIBFWKEYFETCH
             "[libfwkeyfetch]\n"
 #else
@@ -103,21 +110,6 @@ void cmd_help(){
            );
 }
 
-tihmstar::Mem readFromFile(const char *filePath){
-    int fd = -1;
-    cleanup([&]{
-        safeClose(fd);
-    });
-    struct stat st{};
-    tihmstar::Mem ret;
-    
-    retassure((fd = open(filePath, O_RDONLY))>0, "Failed to open '%s'",filePath);
-    retassure(!fstat(fd, &st), "Failed to stat file");
-    ret.resize(st.st_size);
-    retassure(read(fd, ret.data(), ret.size()) == ret.size(), "Failed to read file");
-    return ret;
-}
-
 #ifdef HAVE_PLIST
 plist_t readPlistFromFile(const char *filePath){
     int fd = -1;
@@ -139,18 +131,10 @@ plist_t readPlistFromFile(const char *filePath){
 #endif //HAVE_PLIST
 
 void saveToFile(const char *filePath, const void *buf, size_t bufSize){
-    FILE *f = NULL;
-    cleanup([&]{
-        if (f) {
-            fclose(f);
-        }
-    });
-    
     if (strcmp(filePath, "-") == 0) {
         write(STDERR_FILENO, buf, bufSize);
     }else{
-        retassure(f = fopen(filePath, "wb"), "failed to create file");
-        retassure(fwrite(buf, 1, bufSize, f) == bufSize, "failed to write to file");
+        tihmstar::writeFile(filePath, buf, bufSize);
     }
 }
 
@@ -171,7 +155,12 @@ int main_r(int argc, const char * argv[]) {
     int opt = 0;
     long flags = 0;
     bool fetchKeys = false;
-
+    
+#ifdef WITH_24KPWN
+    bool do24kPwn = false;
+    uint32_t x24kpwnCpid = 0;
+#endif //WITH_24KPWN
+    
     while ((opt = getopt_long(argc, (char* const *)argv, "hc:efn:o:p:r:s:t:v", longopts, &optindex)) >= 0) {
         switch (opt) {
             case 0: //long opts
@@ -182,7 +171,17 @@ int main_r(int argc, const char * argv[]) {
                     decryptIv = optarg;
                 }else if (curopt == "key") {
                     decryptKey = optarg;
+#ifdef WITH_24KPWN
+                }else if (curopt == "24kpwn"){
+                    if (optarg) x24kpwnCpid = (uint32_t)tihmstar::parseNum(optarg);
+                    do24kPwn = true;
+#endif
+                }else{
+                    error("Unkown curopt '%s'",curopt.c_str());
+                    cmd_help();
+                    return 1;
                 }
+                
                 break;
             }
             case 'h':
@@ -205,7 +204,6 @@ int main_r(int argc, const char * argv[]) {
                 retassure(!img3Type, "Invalid command line arguments. im4pType already set!");
                 img3Type = optarg;
                 flags |= FLAG_RENAME;
-                break;
             case 'o':
                 retassure(!outFile, "Invalid command line arguments. outFile already set!");
                 outFile = optarg;
@@ -266,17 +264,7 @@ int main_r(int argc, const char * argv[]) {
     tihmstar::Mem workingBuf;
 
     if (lastArg) {
-        if (strcmp(lastArg, "-") == 0){
-            char cbuf[0x1000] = {};
-            ssize_t didRead = 0;
-            
-            while ((didRead = read(STDIN_FILENO, cbuf, sizeof(cbuf))) > 0) {
-                workingBuf.append(cbuf, didRead);
-            }
-            
-        }else{
-            workingBuf = tihmstar::readFile(lastArg);
-        }
+        workingBuf = tihmstar::readFile(lastArg);
     }
 
     if (flags & FLAG_EXTRACT) {
@@ -319,7 +307,7 @@ int main_r(int argc, const char * argv[]) {
             }
 #endif
         failedToFindKeys:;
-        }
+        }        
         auto outdata = getPayloadFromIMG3(workingBuf.data(),workingBuf.size(), decryptIv, decryptKey);
         saveToFile(outFile, outdata.data(), outdata.size());
         if (compression) {
@@ -332,7 +320,7 @@ int main_r(int argc, const char * argv[]) {
         retassure(img3Type, "img3Type required for operation");
         tihmstar::Mem img3;
         if (payloadimg3) {
-            img3 = readFromFile(payloadimg3);
+            img3 = tihmstar::readFile(payloadimg3);
         }else{
             img3 = getEmptyIMG3Container(htonl(*(uint32_t*)img3Type));
             img3 = appendPayloadToIMG3(img3, 'DATA', workingBuf);
@@ -349,8 +337,13 @@ int main_r(int argc, const char * argv[]) {
             return -1;
 #endif
         }
-
-        saveToFile(outFile, img3.data(), img3.size());
+#ifdef WITH_24KPWN
+        if (do24kPwn){
+            info("Injecting 24kpwn exploit");
+            img3 = do24kpwn(img3.data(), img3.size(), x24kpwnCpid);
+        }
+#endif //WITH_24KPWN
+        tihmstar::writeFile(outFile, img3.data(), img3.size());
         info("Created IMG3 file at %s",outFile);
     }else if (flags & FLAG_RENAME){
         retassure(outFile, "outputfile required");
@@ -360,7 +353,7 @@ int main_r(int argc, const char * argv[]) {
         info("Saved new renamed IMG3 to %s",outFile);
     } else if (replaceTemplateFilePath) {
         retassure(outFile, "Outfile required for operation");
-        tihmstar::Mem templateFile = readFromFile(replaceTemplateFilePath);
+        tihmstar::Mem templateFile = tihmstar::readFile(replaceTemplateFilePath);
         auto img3 = replaceDATAinIMG3(templateFile, workingBuf);
         img3 = removeTagFromIMG3(img3.data(), img3.size(), 'KBAG');
         saveToFile(outFile, img3.data(), img3.size());
@@ -382,6 +375,14 @@ int main_r(int argc, const char * argv[]) {
             info("IMG3 file signature is %s",isSigned ? "VALID" : "NOT valid");
         }
         return isSigned ? 0 : 1;
+#ifdef WITH_24KPWN
+    }else if (do24kPwn){
+        info("Injecting 24kpwn exploit");
+        retassure(outFile, "outputfile required");
+        auto img3 = do24kpwn(workingBuf.data(), workingBuf.size(), x24kpwnCpid);
+        tihmstar::writeFile(outFile, img3.data(), img3.size());
+        info("Saved new 24kpwn IMG3 to %s",outFile);
+#endif //WITH_24KPWN
     }else{
         //print
         printIMG3(workingBuf.data(), workingBuf.size());

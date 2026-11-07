@@ -43,7 +43,7 @@ CFLAGS+=" -std=c11"
 OPENSSL_REQUIRES_STR="openssl >= 0.9.8"
 LIBPLIST_REQUIRES_STR="libplist-2.0 >= 2.3.0"
 LIBFWKEYFETCH_REQUIRES_STR="libfwkeyfetch >= 1"
-LIBGENERAL_REQUIRES_STR="libgeneral >= 75"
+LIBGENERAL_REQUIRES_STR="libgeneral >= 92"
 PKG_CHECK_MODULES(openssl, $OPENSSL_REQUIRES_STR, have_openssl=yes, have_openssl=no)
 PKG_CHECK_MODULES(libfwkeyfetch, $LIBFWKEYFETCH_REQUIRES_STR, have_libfwkeyfetch=yes, have_libfwkeyfetch=no)
 PKG_CHECK_MODULES(libplist, $LIBPLIST_REQUIRES_STR, have_plist=yes, have_plist=no)
@@ -75,6 +75,11 @@ AC_ARG_WITH([openssl],
             [with_openssl=no],
             [with_openssl=yes])
 
+AC_ARG_WITH([24kpwn],
+            [AS_HELP_STRING([--with-24kpwn],
+            [build with 24kpwn @<:@default=no@:>@])],
+            [with_24kpwn=yes],
+            [with_24kpwn=no])
 
 if test "x$have_libfwkeyfetch" == "xyes"; then
   if test "x$with_libfwkeyfetch" == "xyes"; then
@@ -124,6 +129,12 @@ else
   AC_SUBST([HEADER_HAVE_OPENSSL], [0])
 fi
 
+if test "x$with_24kpwn" == "xyes"; then
+  AC_DEFINE(WITH_24KPWN, 1, [Define if you want 24kpwn support])
+  AC_SUBST([WITH_24KPWN], [1])
+fi
+AM_CONDITIONAL(WITH_24KPWN, test "x${with_24kpwn}" = "xyes")
+
 if test "x$crypto_backend" != "xnone"; then
   AC_DEFINE(HAVE_CRYPTO, 1, [Define if you have either openssl or CommCrypto])
   AC_SUBST([HEADER_HAVE_CRYPTO], [1])
@@ -143,7 +154,8 @@ AC_CHECK_HEADERS([arpa/inet.h stdint.h stdlib.h string.h unistd.h winsock.h])
 # Check for functions
 AC_CHECK_FUNCS([memmem])
 
-
+# check for large file support
+AC_SYS_LARGEFILE
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile
@@ -161,7 +173,8 @@ Configuration for $PACKAGE-$VERSION:
   install prefix ..........: $prefix
   with libfwkeyfetch ......: $with_libfwkeyfetch
   with plist ..............: $with_plist
-  crypto backend ..........: $crypto_backend"
+  crypto backend ..........: $crypto_backend
+  with 24kpwn .............: $with_24kpwn"
 
 echo "  compiler ................: ${CC}
 
