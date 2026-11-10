@@ -130,6 +130,14 @@ plist_t readPlistFromFile(const char *filePath){
 }
 #endif //HAVE_PLIST
 
+void saveToFile(const char *filePath, const void *buf, size_t bufSize){
+    if (strcmp(filePath, "-") == 0) {
+        write(STDERR_FILENO, buf, bufSize);
+    }else{
+        tihmstar::writeFile(filePath, buf, bufSize);
+    }
+}
+
 MAINFUNCTION
 int main_r(int argc, const char * argv[]) {
     info("%s",version());
@@ -257,7 +265,17 @@ int main_r(int argc, const char * argv[]) {
     tihmstar::Mem workingBuf;
 
     if (lastArg) {
-        workingBuf = tihmstar::readFile(lastArg);
+        if (strcmp(lastArg, "-") == 0){
+            char cbuf[0x1000] = {};
+            ssize_t didRead = 0;
+            
+            while ((didRead = read(STDIN_FILENO, cbuf, sizeof(cbuf))) > 0) {
+                workingBuf.append(cbuf, didRead);
+            }
+            
+        }else{
+            workingBuf = tihmstar::readFile(lastArg);
+        }
     }
 
     if (flags & FLAG_EXTRACT) {
@@ -302,7 +320,7 @@ int main_r(int argc, const char * argv[]) {
         failedToFindKeys:;
         }        
         auto outdata = getPayloadFromIMG3(workingBuf.data(),workingBuf.size(), decryptIv, decryptKey);
-        tihmstar::writeFile(outFile, outdata.data(), outdata.size());
+        saveToFile(outFile, outdata.data(), outdata.size());
         if (compression) {
             info("Extracted (and uncompressed %s) IMG3 payload to %s",compression,outFile);
         }else{
@@ -336,20 +354,20 @@ int main_r(int argc, const char * argv[]) {
             img3 = do24kpwn(img3.data(), img3.size(), x24kpwnCpid);
         }
 #endif //WITH_24KPWN
-        tihmstar::writeFile(outFile, img3.data(), img3.size());
+        saveToFile(outFile, img3.data(), img3.size());
         info("Created IMG3 file at %s",outFile);
     }else if (flags & FLAG_RENAME){
         retassure(outFile, "outputfile required");
 
         auto img3 = renameIMG3(workingBuf.data(), workingBuf.size(), img3Type);
-        tihmstar::writeFile(outFile, img3.data(), img3.size());
+        saveToFile(outFile, img3.data(), img3.size());
         info("Saved new renamed IMG3 to %s",outFile);
     } else if (replaceTemplateFilePath) {
         retassure(outFile, "Outfile required for operation");
         tihmstar::Mem templateFile = tihmstar::readFile(replaceTemplateFilePath);
         auto img3 = replaceDATAinIMG3(templateFile, workingBuf);
         img3 = removeTagFromIMG3(img3.data(), img3.size(), 'KBAG');
-        tihmstar::writeFile(outFile, img3.data(), img3.size());
+        saveToFile(outFile, img3.data(), img3.size());
         info("Created IMG3 file at %s",outFile);
     }else if (flags & FLAG_VERIFY){
         info("Verifying IMG3 file");
@@ -373,7 +391,7 @@ int main_r(int argc, const char * argv[]) {
         info("Injecting 24kpwn exploit");
         retassure(outFile, "outputfile required");
         auto img3 = do24kpwn(workingBuf.data(), workingBuf.size(), x24kpwnCpid);
-        tihmstar::writeFile(outFile, img3.data(), img3.size());
+        saveToFile(outFile, img3.data(), img3.size());
         info("Saved new 24kpwn IMG3 to %s",outFile);
 #endif //WITH_24KPWN
     }else{
