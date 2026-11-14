@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2A3E770A29A8DD370079E6B4 /* libcrypto.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; };
-		2A3E770B29A8DD370079E6B4 /* libcrypto.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		2A578E1F2F56FE0A00125668 /* libplist-2.0.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */; };
 		2A578E202F56FE0A00125668 /* libplist-2.0.4.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A578E1E2F56FE0A00125668 /* libplist-2.0.4.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		2A578E222F56FE3800125668 /* libfwkeyfetch.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A578E212F56FE3800125668 /* libfwkeyfetch.0.dylib */; };
@@ -19,6 +17,8 @@
 		8738E8A326948E9500C03872 /* libgeneral.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8738E8A126948E9500C03872 /* libgeneral.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8738E8A726948F1600C03872 /* img3tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8738E8A526948F1600C03872 /* img3tool.cpp */; };
 		8738E8AA26949FBA00C03872 /* lzssdec.c in Sources */ = {isa = PBXBuildFile; fileRef = 8738E8A926949FBA00C03872 /* lzssdec.c */; };
+		87D5EE7230A6F682000DA783 /* libcrypto.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; };
+		87D5EE7330A6F682000DA783 /* libcrypto.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A3E770929A8DD370079E6B4 /* libcrypto.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,8 +37,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				87D5EE7330A6F682000DA783 /* libcrypto.3.dylib in Embed Libraries */,
 				2A578E232F56FE3800125668 /* libfwkeyfetch.0.dylib in Embed Libraries */,
-				2A3E770B29A8DD370079E6B4 /* libcrypto.3.dylib in Embed Libraries */,
 				8738E8A326948E9500C03872 /* libgeneral.0.dylib in Embed Libraries */,
 				2A578E202F56FE0A00125668 /* libplist-2.0.4.dylib in Embed Libraries */,
 			);
@@ -69,8 +69,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				87D5EE7230A6F682000DA783 /* libcrypto.3.dylib in Frameworks */,
 				2A578E222F56FE3800125668 /* libfwkeyfetch.0.dylib in Frameworks */,
-				2A3E770A29A8DD370079E6B4 /* libcrypto.3.dylib in Frameworks */,
 				8738E8A226948E9500C03872 /* libgeneral.0.dylib in Frameworks */,
 				2A578E1F2F56FE0A00125668 /* libplist-2.0.4.dylib in Frameworks */,
 			);
