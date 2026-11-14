@@ -35,7 +35,7 @@ case $host_os in
       ;;
 esac
 
-CXXFLAGS+=" -std=c++11"
+CXXFLAGS+=" -fPIC -std=c++11"
 CFLAGS+=" -fPIC -std=c11"
 # Versioning.
 
